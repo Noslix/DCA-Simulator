@@ -201,26 +201,34 @@ function calculateDCA(strategy) {
   let feesBTC = 0, feesETH = 0;
   const values = [];
 
+  // Calculate purchases per month based on frequency
+  // freq 1 = daily (30 purchases/month), freq 7 = weekly (4.3 purchases/month)
+  // freq 30 = monthly (1 purchase/month), freq 365 = yearly (1/12 purchase/month)
+  const btcPurchasesPerMonth = strategy.btcFreq === 365 ? 1/12 : 30 / strategy.btcFreq;
+  const ethPurchasesPerMonth = strategy.ethFreq === 365 ? 1/12 : 30 / strategy.ethFreq;
+
   btc.forEach((priceData, monthIdx) => {
     const btcPrice = priceData.p;
     const ethPrice = eth[monthIdx].p;
 
-    // BTC DCA
-    if (strategy.btcAmount > 0 && monthIdx % Math.ceil(strategy.btcFreq / 30) === 0) {
-      const fee = feeBase + (strategy.btcAmount * feePercent / 100);
-      const net = strategy.btcAmount - fee;
-      totalBTC += net / btcPrice;
-      investedBTC += strategy.btcAmount;
-      feesBTC += fee;
+    // BTC DCA - calculate monthly investment based on frequency
+    if (strategy.btcAmount > 0) {
+      const monthlyAmount = strategy.btcAmount * btcPurchasesPerMonth;
+      const monthlyFees = (feeBase * btcPurchasesPerMonth) + (monthlyAmount * feePercent / 100);
+      const netAmount = monthlyAmount - monthlyFees;
+      totalBTC += netAmount / btcPrice;
+      investedBTC += monthlyAmount;
+      feesBTC += monthlyFees;
     }
 
-    // ETH DCA
-    if (strategy.ethAmount > 0 && monthIdx % Math.ceil(strategy.ethFreq / 30) === 0) {
-      const fee = feeBase + (strategy.ethAmount * feePercent / 100);
-      const net = strategy.ethAmount - fee;
-      totalETH += net / ethPrice;
-      investedETH += strategy.ethAmount;
-      feesETH += fee;
+    // ETH DCA - calculate monthly investment based on frequency
+    if (strategy.ethAmount > 0) {
+      const monthlyAmount = strategy.ethAmount * ethPurchasesPerMonth;
+      const monthlyFees = (feeBase * ethPurchasesPerMonth) + (monthlyAmount * feePercent / 100);
+      const netAmount = monthlyAmount - monthlyFees;
+      totalETH += netAmount / ethPrice;
+      investedETH += monthlyAmount;
+      feesETH += monthlyFees;
     }
 
     const portfolioValue = (totalBTC * btcPrice) + (totalETH * ethPrice);
