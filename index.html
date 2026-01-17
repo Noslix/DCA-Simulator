@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>📈 Multi-Strategy DCA Simulator</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div style="flex:1"></div>
+      <h1>📈 Multi-Strategy DCA Simulator</h1>
+      <div style="flex:1;display:flex;justify-content:flex-end">
+        <button class="support-btn" onclick="openModal()">
+          <span>💛</span>
+          <span>Support</span>
+        </button>
+      </div>
+    </div>
+    <p class="subtitle">Compare unlimited DCA strategies on Bitcoin & Ethereum</p>
+
+    <!-- Introduction -->
+    <div class="card intro" id="intro">
+      <button class="intro-close" onclick="closeIntro()">✕</button>
+      <h3>📊 How Does This Simulator Work?</h3>
+      <p>This tool simulates <span class="highlight-yellow">Dollar Cost Averaging (DCA)</span> strategies using <strong>historical price data</strong> from Bitcoin and Ethereum.</p>
+      <p>Enter your investment parameters to see <span class="highlight-green">how much you would have gained or lost</span> if you had followed this strategy over the selected period.</p>
+      <p>You can compare multiple strategies simultaneously to find the approach that would have worked best.</p>
+      <div class="disclaimer">
+        <p><strong>⚠️ IMPORTANT DISCLAIMER</strong></p>
+        <p>This simulation is based on <strong>past performance</strong> and is for <strong>educational purposes only</strong>. Past results do <strong>NOT</strong> guarantee future returns. This is <strong>NOT</strong> financial or investment advice.</p>
+      </div>
+    </div>
+
+    <!-- Time Period -->
+    <div class="card">
+      <div class="slider-container">
+        <label>
+          Time Period: <span class="value" id="yearsValue">5 years</span>
+          <span class="dates" id="datesRange">(Jan 2021 → Jan 2026)</span>
+        </label>
+        <input type="range" min="1" max="10" value="5" id="yearsSlider" oninput="updateYears()">
+        <div class="slider-labels">
+          <span>1 year</span>
+          <span>10 years</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Price History Chart -->
+    <div class="card">
+      <h3 class="card-title">
+        <span style="color:var(--orange)">₿</span>
+        <span style="color:var(--blue)">Ξ</span>
+        Price History
+      </h3>
+      <div class="chart-container">
+        <canvas id="priceChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Fees -->
+    <div class="card">
+      <h3 class="card-title">💸 Exchange Fees (USD → Crypto)</h3>
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Fee Percentage (%)</label>
+          <input type="number" id="feePercent" value="2" min="0" step="0.1" oninput="updateFeeExample()">
+        </div>
+        <div class="form-group">
+          <label>Fixed Fee per Transaction ($)</label>
+          <input type="number" id="feeBase" value="0" min="0" step="0.1" oninput="updateFeeExample()">
+        </div>
+      </div>
+      <p style="font-size:0.8rem;color:var(--text-muted);margin-top:8px" id="feeExample">
+        Example: 2% fee means a $100 purchase buys $98.00 worth of crypto.
+      </p>
+    </div>
+
+    <!-- Add Strategy -->
+    <div class="card">
+      <h3 class="card-title">
+        <span style="color:var(--green);font-size:1.5rem">+</span>
+        Add New Strategy
+      </h3>
+      <div class="grid-2">
+        <!-- Bitcoin -->
+        <div class="crypto-box btc">
+          <div class="crypto-header">
+            <span class="icon">₿</span>
+            <span class="btc-label">Bitcoin</span>
+          </div>
+          <div class="form-group">
+            <label>Amount ($)</label>
+            <input type="number" id="btcAmount" value="100" min="0">
+          </div>
+          <div class="form-group">
+            <label>Frequency</label>
+            <select id="btcFrequency">
+              <option value="1">Daily</option>
+              <option value="7" selected>Weekly</option>
+              <option value="30">Monthly</option>
+              <option value="365">Yearly</option>
+            </select>
+          </div>
+        </div>
+        <!-- Ethereum -->
+        <div class="crypto-box eth">
+          <div class="crypto-header">
+            <span class="icon">Ξ</span>
+            <span class="eth-label">Ethereum</span>
+          </div>
+          <div class="form-group">
+            <label>Amount ($)</label>
+            <input type="number" id="ethAmount" value="0" min="0">
+          </div>
+          <div class="form-group">
+            <label>Frequency</label>
+            <select id="ethFrequency">
+              <option value="1">Daily</option>
+              <option value="7" selected>Weekly</option>
+              <option value="30">Monthly</option>
+              <option value="365">Yearly</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <button class="add-btn" id="addBtn" onclick="addStrategy()">
+        Add Strategy to Chart
+      </button>
+    </div>
+
+    <!-- Strategy Chart -->
+    <div class="card">
+      <h3 class="card-title">📊 Strategy Comparison</h3>
+      <div id="emptyState" class="empty-state">
+        <div class="icon">📉</div>
+        <p>Add a strategy to see the comparison chart</p>
+      </div>
+      <div class="chart-container tall" id="strategyChartWrapper" style="display:none">
+        <canvas id="strategyChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div class="card" id="resultsCard" style="display:none">
+      <h3 class="card-title">📋 Strategy Results</h3>
+      <div id="resultsContainer"></div>
+    </div>
+
+    <!-- Tip -->
+    <div class="card">
+      <p class="tip">
+        <span class="highlight">💡 Tip:</span> Try comparing "$100 weekly BTC only" vs "$100 weekly ETH only" vs "$50 weekly BTC + $50 weekly ETH" to see the difference!
+      </p>
+    </div>
+  </div>
+
+  <!-- Support Modal -->
+  <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+    <div class="modal" onclick="event.stopPropagation()">
+      <button class="modal-close" onclick="closeModal()">&times;</button>
+      <div class="modal-header">
+        <div class="icon">💛</div>
+        <h2>Support My Work</h2>
+        <p>Thank you for considering a donation! Your support helps me build free tools.</p>
+      </div>
+      <div class="qr-container">
+        <div class="qr-wrapper">
+          <img id="qrImage" alt="Bitcoin QR Code">
+        </div>
+      </div>
+      <div class="address-box">
+        <p class="address-label">Bitcoin Address (SegWit)</p>
+        <div class="address-value">
+          <code>bc1qqtrezza28fhdwer5tqfyfucuqa4p7lmw8g3mcq</code>
+        </div>
+        <button class="copy-btn" id="copyBtn" onclick="copyAddress()">
+          📋 Copy Bitcoin Address
+        </button>
+      </div>
+      <p class="modal-footer">Scan the QR code or copy the address. Every satoshi counts! 🚀</p>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
